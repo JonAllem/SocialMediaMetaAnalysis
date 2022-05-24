@@ -1,0 +1,2079 @@
+---
+title: "Exposure to Tobacco Content on Social Media and Tobacco Use: A Meta-Analysis"
+author: Scott I. Donaldson, PhD
+Date: 11-10-21
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Packages
+
+```{r Packages}
+#Remember to only run meta or metafor, simultaneously produces error message
+#library(readxl)
+#library(tidyverse)
+#library(haven)
+library(meta)
+#library(metafor)
+#library(ggplot2)
+#library(plyr)
+#library(grid)
+#library(gridExtra)
+#library(metaSEM)
+#library(ggrepel)
+#library(dmetar)
+```
+
+# Author Data
+
+## Choi 2015
+
+-   **Variables**
+
+-   Qn6 Curious about smoking cigarettes
+
+-   Qn7 Tried cigarette smkg, even 1 or 2 puffs
+
+-   Qn8 Think will smoke a cigarette anytime during next year
+
+-   Qn9 Think will try a cigarette soon
+
+-   Qn10 If 1 of friends offered a cigarette, would smoke it
+
+-   Qn13 P30D: \# days smoke cigarettes
+
+-   Qn23 Ever tried smkg cigars, cigarillos, or little cigars, even 1 or 2 puffs
+
+-   Qn25 P30D: \# days smoke cigars, cigarillos, or little cigars
+
+-   Qn37g EVER TRIED: e-cigt (e.g. Ruyan)
+
+-   Qn38a CURRENT (1 or MORE DAYS in P30D) USE: roll-your-own cigt
+
+-   Qn47d Receive coupons: Social Networks
+
+```{r Read in the data}
+nyts2012 <- read_excel("~/Desktop/USC/MetaAnalysis/Author_Data/NYTS_2012/nyts2012.xlsx")
+
+nyts2012 <- nyts2012[, c(17:21,24,48,50,104,107,127)]
+
+```
+
+```{r Score Susceptibility}
+# Reverse code all three items
+#Qn6
+nyts2012$qn6_R <- recode(nyts2012$qn6,
+                                    '4'  = 1,
+                                    '3'  = 2, 
+                                    '2'  = 3,
+                                    '1'  = 4)
+
+#Qn9
+nyts2012$qn9_R <- recode(nyts2012$qn9,
+                                    '4'  = 1,
+                                    '3'  = 2, 
+                                    '2'  = 3,
+                                    '1'  = 4)
+
+#Qn10
+nyts2012$qn10_R <- recode(nyts2012$qn10,
+                                    '4'  = 1,
+                                    '3'  = 2, 
+                                    '2'  = 3,
+                                    '1'  = 4)
+
+#Score Susceptibility
+nyts2012 <- mutate(nyts2012,
+Susceptibility = 
+(nyts2012$qn6_R + nyts2012$qn9_R + nyts2012$qn10_R)/3)
+
+
+# Dichotomize Susceptibility
+nyts2012$SUS_DI[nyts2012$Susceptibility==1] <- "0"
+nyts2012$SUS_DI[nyts2012$Susceptibility>1] <- "1"
+nyts2012$SUS_DI <- as.numeric(nyts2012$SUS_DI)
+```
+
+```{r Recode NA to 0}
+nyts2012[is.na(nyts2012)] = 0
+
+```
+
+```{r Logisitic Regression Susceptibility}
+#Run Logistic Regression Models - Unadjusted
+
+nyts2012$qn47d <- as.factor(nyts2012$qn47d)
+
+##Social media on susceptibility to use cigarettes
+BLR.SUS <- glm(SUS_DI ~ qn47d,
+               data = nyts2012, 
+               family = "binomial")
+summary(BLR.SUS)
+exp(cbind(OR = coef(BLR.SUS), confint(BLR.SUS)))
+
+```
+
+```{r Logisitic Regression Ever Cigarette Use}
+#Run Logistic Regression Models - Unadjusted
+nyts2012$qn7 <- as.factor(nyts2012$qn7)
+
+# Dichotomize Ever Cig Use
+nyts2012$qn7_DI[nyts2012$qn7==2] <- "0"
+nyts2012$qn7_DI[nyts2012$qn7==0] <- "0"
+nyts2012$qn7_DI[nyts2012$qn7==1] <- "1"
+nyts2012$qn7_DI <- as.numeric(nyts2012$qn7_DI)
+
+
+##Social media on ever cig use
+EverCig <- glm(qn7_DI ~ qn47d,
+               data = nyts2012, 
+               family = "binomial")
+summary(EverCig)
+exp(cbind(OR = coef(EverCig), confint(EverCig)))
+
+```
+
+```{r Logisitic Regression Current Cigarette Use}
+#Run Logistic Regression Models - Unadjusted
+nyts2012$qn13 <- as.numeric(nyts2012$qn13)
+
+# Dichotomize Current Cig Use
+nyts2012$qn13_DI[nyts2012$qn13<=2] <- "0"
+nyts2012$qn13_DI[nyts2012$qn13>2] <- "1"
+nyts2012$qn13_DI <- as.numeric(nyts2012$qn13_DI)
+
+
+##Social media on Current Cig use
+CurrentCig <- glm(qn13_DI ~ qn47d,
+               data = nyts2012, 
+               family = "binomial")
+summary(CurrentCig)
+exp(cbind(OR = coef(CurrentCig), confint(CurrentCig)))
+
+```
+
+```{r Logisitic Regression Ever Cigar Use}
+#Run Logistic Regression Models - Unadjusted
+qn23
+
+# Dichotomize Ever Cigar Use
+nyts2012$qn23_DI[nyts2012$qn23==2] <- "0"
+nyts2012$qn23_DI[nyts2012$qn23==1] <- "1"
+nyts2012$qn23_DI <- as.numeric(nyts2012$qn23_DI)
+
+
+##Social media on Ever Cigar Use
+EverCigar <- glm(qn23_DI ~ qn47d,
+               data = nyts2012, 
+               family = "binomial")
+summary(EverCigar)
+exp(cbind(OR = coef(EverCigar), confint(EverCigar)))
+
+```
+
+```{r Logisitic Regression Current Cigar Use}
+#Run Logistic Regression Models - Unadjusted
+qn25
+
+# Dichotomize Current Cigar Use
+nyts2012$qn25_DI[nyts2012$qn25<=1] <- "0"
+nyts2012$qn25_DI[nyts2012$qn25>1] <- "1"
+nyts2012$qn25_DI <- as.numeric(nyts2012$qn25_DI)
+
+
+##Social media on Current Cigar Use
+CurrentCigar <- glm(qn25_DI ~ qn47d,
+               data = nyts2012, 
+               family = "binomial")
+summary(CurrentCigar)
+exp(cbind(OR = coef(CurrentCigar), confint(CurrentCigar)))
+
+```
+
+```{r Logisitic Regression Ever Ecig Use}
+#Run Logistic Regression Models - Unadjusted
+qn37g
+
+# Dichotomize Ever Ecig Use
+nyts2012$qn37g_DI[nyts2012$qn37g<1] <- "0"
+nyts2012$qn37g_DI[nyts2012$qn37g==1] <- "1"
+nyts2012$qn37g_DI <- as.numeric(nyts2012$qn37g_DI)
+
+
+##Social media on Ever Ecig Use
+EverECIG <- glm(qn37g_DI ~ qn47d,
+               data = nyts2012, 
+               family = "binomial")
+summary(EverECIG)
+exp(cbind(OR = coef(EverECIG), confint(EverECIG)))
+
+```
+
+```{r Logisitic Regression Current Ecig Use}
+#Run Logistic Regression Models - Unadjusted
+qn38a
+
+##Social media on Current Ecig Use
+CurrentECIG <- glm(qn38a ~ qn47d,
+               data = nyts2012, 
+               family = "binomial")
+summary(CurrentECIG)
+exp(cbind(OR = coef(CurrentECIG), confint(CurrentECIG)))
+
+```
+
+## Majmundar 2019
+
+-   **Variables**
+
+-   mediafollowbrands - Liked or followed tobacco brands on social media
+
+-   rusmoker - cigarettes ever use
+
+-   ecig - ever use
+
+-   ecignow - current use
+
+-   cigar - ever use
+
+-   hookah - ever use
+
+```{r Read in the data for Anuja}
+
+AnujaData_2019 <- read_excel("~/Desktop/USC/MetaAnalysis/Author_Data/Anuja/AnujaData_2019.xlsm")
+
+AnujaData_2019 <- AnujaData_2019[, c(72:82, 170, 208, 209,
+                                     260, 390)]
+```
+
+```{r Score Study Variables}
+
+#Score Tobacco Exposure
+AnujaData_2019 <- mutate(AnujaData_2019,
+ExposureScore = (mediafollowbrands___1 +
+                 mediafollowbrands___2 +
+                 mediafollowbrands___3 +
+                 mediafollowbrands___4 +
+                 mediafollowbrands___5 +
+                 mediafollowbrands___6 +
+                 mediafollowbrands___7 +
+                 mediafollowbrands___8))
+
+# Exposure dict.
+AnujaData_2019$ExposureScore_NEW[AnujaData_2019$ExposureScore==0] <- "0"
+AnujaData_2019$ExposureScore_NEW[AnujaData_2019$ExposureScore>0] <- "1"
+
+# Score cigarettes ever use
+AnujaData_2019$cig_ever[AnujaData_2019$rusmoker==2] <- "0"
+AnujaData_2019$cig_ever[AnujaData_2019$rusmoker==1] <- "1"
+
+# Score ecig ever use
+AnujaData_2019$ecig_ever[AnujaData_2019$ecig==2] <- "0"
+AnujaData_2019$ecig_ever[AnujaData_2019$ecig==1] <- "1"
+
+# Score ecig current use
+AnujaData_2019$ecig_current[AnujaData_2019$ecignow==3] <- "0"
+AnujaData_2019$ecig_current[AnujaData_2019$ecignow<=2] <- "1"
+
+# Score cigar ever use
+AnujaData_2019$cigar_ever[AnujaData_2019$cigar==3] <- "0"
+AnujaData_2019$cigar_ever[AnujaData_2019$cigar<=2] <- "1"
+
+# Score Hookah ever use
+AnujaData_2019$hookah_ever[AnujaData_2019$hookah==3] <- "0"
+AnujaData_2019$hookah_ever[AnujaData_2019$hookah<=2] <- "1"
+
+```
+
+```{r Logisitic Regression cig ever}
+
+AnujaData_2019$cig_ever <- as.numeric(AnujaData_2019$cig_ever)
+
+Reg.cigever <- glm(cig_ever ~ ExposureScore_NEW,
+               data = AnujaData_2019, 
+               family = "binomial")
+summary(Reg.cigever)
+exp(cbind(OR = coef(Reg.cigever), confint(Reg.cigever)))
+
+```
+
+```{r Logisitic Regression ecig ever - Bad Power}
+
+AnujaData_2019$ecig_ever <- as.numeric(AnujaData_2019$ecig_ever)
+
+Reg.ecigever <- glm(ecig_ever ~ ExposureScore_NEW,
+               data = AnujaData_2019, 
+               family = "binomial")
+summary(Reg.ecigever)
+exp(cbind(OR = coef(Reg.ecigever), confint(Reg.ecigever)))
+
+```
+
+```{r Logisitic Regression ecig current}
+
+AnujaData_2019$ecig_current <- as.numeric(AnujaData_2019$ecig_current)
+
+Reg.ecigcurrent <- glm(ecig_current ~ ExposureScore_NEW,
+               data = AnujaData_2019, 
+               family = "binomial")
+summary(Reg.ecigcurrent)
+exp(cbind(OR = coef(Reg.ecigcurrent), confint(Reg.ecigcurrent)))
+
+```
+
+```{r Logisitic Regression cigar ever}
+
+AnujaData_2019$cigar_ever <- as.numeric(AnujaData_2019$cigar_ever)
+
+Reg.cigar <- glm(cigar_ever ~ ExposureScore_NEW,
+               data = AnujaData_2019, 
+               family = "binomial")
+summary(Reg.cigar)
+exp(cbind(OR = coef(Reg.cigar), confint(Reg.cigar)))
+
+```
+
+```{r Logisitic Regression hookah ever}
+
+AnujaData_2019$hookah_ever <- as.numeric(AnujaData_2019$hookah_ever)
+
+Reg.hookah <- glm(hookah_ever ~ ExposureScore_NEW,
+               data = AnujaData_2019, 
+               family = "binomial")
+summary(Reg.hookah)
+exp(cbind(OR = coef(Reg.hookah), confint(Reg.hookah)))
+
+```
+
+## Septiono 2018
+
+-   **Variables**
+
+-   IV12 - Have you ever tried cigarette smoking, even just a few puffs?
+
+-   IV14 - How many cigarettes have you smoked during the last 30 days?
+
+-   VIII49A - How often do you see cigarette advertisement on Facebook?
+
+-   VIII49B - How often do you see cigarette advertisement on Twitter?
+
+-   VIII49C - How often do you see cigarette advertisement on YouTube?
+
+-   VIII49D - How often do you see cigarette advertisement on Instagram?
+
+-   SMOKING_STATUS - Smoking status in the last 30 days
+
+```{r Read stata data}
+Wahyu <- read_dta("~/Desktop/USC/MetaAnalysis/Author_Data/Wayhu/Wahyu.dta")
+```
+
+```{r Score Exposure Variable}
+# Facebook
+Wahyu$VIII49A <- as.numeric(Wahyu$VIII49A)
+Wahyu$VIII49A[Wahyu$VIII49A==0] <- "0"
+Wahyu$VIII49A[Wahyu$VIII49A>0] <- "1"
+
+# Twitter
+Wahyu$VIII49B <- as.numeric(Wahyu$VIII49B)
+Wahyu$VIII49B[Wahyu$VIII49B==0] <- "0"
+Wahyu$VIII49B[Wahyu$VIII49B>0] <- "1"
+
+# YouTube
+Wahyu$VIII49C <- as.numeric(Wahyu$VIII49C)
+Wahyu$VIII49C[Wahyu$VIII49C==0] <- "0"
+Wahyu$VIII49C[Wahyu$VIII49C>0] <- "1"
+
+# Instagram
+Wahyu$VIII49D <- as.numeric(Wahyu$VIII49D)
+Wahyu$VIII49D[Wahyu$VIII49D==0] <- "0"
+Wahyu$VIII49D[Wahyu$VIII49D>0] <- "1"
+
+
+```
+
+```{r Logisitic Regression Facebook}
+
+# Cigarette Ever
+Facebook.cigever <- glm(IV12 ~ VIII49A,
+               data = Wahyu, 
+               family = "binomial")
+summary(Facebook.cigever)
+exp(cbind(OR = coef(Facebook.cigever), confint(Facebook.cigever)))
+
+# Cigarette Current
+Facebook.cigcurrent <- glm(SMOKING_STATUS ~ VIII49A,
+               data = Wahyu, 
+               family = "binomial")
+summary(Facebook.cigcurrent)
+exp(cbind(OR = coef(Facebook.cigcurrent), confint(Facebook.cigcurrent)))
+```
+
+```{r Logisitic Regression Twitter}
+
+# Cigarette Ever
+Twitter.cigever <- glm(IV12 ~ VIII49B,
+               data = Wahyu, 
+               family = "binomial")
+summary(Twitter.cigever)
+exp(cbind(OR = coef(Twitter.cigever), confint(Twitter.cigever)))
+
+# Cigarette Current
+Twitter.cigcurrent <- glm(SMOKING_STATUS ~ VIII49B,
+               data = Wahyu, 
+               family = "binomial")
+summary(Twitter.cigcurrent)
+exp(cbind(OR = coef(Twitter.cigcurrent), confint(Twitter.cigcurrent)))
+```
+
+```{r Logisitic Regression YouTube}
+# Cigarette Ever
+YouTube.cigever <- glm(IV12 ~ VIII49C,
+               data = Wahyu, 
+               family = "binomial")
+summary(YouTube.cigever)
+exp(cbind(OR = coef(YouTube.cigever), confint(YouTube.cigever)))
+
+# Cigarette Current
+YouTube.cigcurrent <- glm(SMOKING_STATUS ~ VIII49C,
+               data = Wahyu, 
+               family = "binomial")
+summary(YouTube.cigcurrent)
+exp(cbind(OR = coef(YouTube.cigcurrent), confint(YouTube.cigcurrent)))
+```
+
+```{r Logisitic Regression Instagram}
+# Cigarette Ever
+Insta.cigever <- glm(IV12 ~ VIII49D,
+               data = Wahyu, 
+               family = "binomial")
+summary(Insta.cigever)
+exp(cbind(OR = coef(Insta.cigever), confint(Insta.cigever)))
+
+# Cigarette Current
+Insta.cigcurrent <- glm(SMOKING_STATUS ~ VIII49D,
+               data = Wahyu, 
+               family = "binomial")
+summary(Insta.cigcurrent)
+exp(cbind(OR = coef(Insta.cigcurrent), confint(Insta.cigcurrent)))
+```
+
+# Read Data from Excel
+
+```{r Read data}
+Meta <- read_excel("MetaAnalysis.xlsx", 
+                    sheet = "Statistics")
+```
+
+# Data Transformations
+
+```{r Convert to log hazard ratio}
+Meta$OR <- log(Meta$OR)
+Meta$OR.L.CI <- log(Meta$OR.L.CI)
+Meta$OR.U.CI <- log(Meta$OR.U.CI)
+
+```
+```{r Create empty NA column to estimate standard error}
+# Set seTE to NA
+Meta$seTE <- NA
+
+```
+```{r Estimate SE for each effect size}
+m.gen_bin <- metagen(TE = OR,
+                     seTE = seTE,
+                     lower = OR.L.CI,
+                     upper = OR.U.CI,
+                     studlab = Author,
+                     data = Meta,
+                     sm = "OR",
+                     method.tau = "PM",
+                     fixed = FALSE,
+                     random = TRUE)
+
+#Compute variance component for three-level meta
+SE <- as.data.frame(m.gen_bin$seTE)
+SE <- transform(SE, Variance=m.gen_bin$seTE^2)
+
+names(SE)[1] <- 'Standard_error'
+
+#Combine rows of META and SE
+Meta <- cbind(Meta,
+              SE)
+
+
+```
+
+# Create Dataframes for Dependent Variables
+```{r DFs}
+# Lifetime use variables
+Meta.Lifetime <- subset(Meta, DV_Final=='Lifetime e-cigarette use' |
+                         DV_Final=='Lifetime cigarette use' |
+                         DV_Final=='Lifetime other tobacco use')
+Meta.Lifetime.ecig <- subset(Meta, DV_Final=='Lifetime e-cigarette use')
+Meta.Lifetime.cig <- subset(Meta, DV_Final=='Lifetime cigarette use')
+Meta.Lifetime.other <- subset(Meta, DV_Final=='Lifetime other tobacco use')
+
+#Past 30 days use variables
+Meta.Past30days <- subset(Meta, DV_Final=='Past-30-day e-cigarette use' |
+                         DV_Final=='Past-30-day cigarette use' |
+                         DV_Final=='Past-30-day other tobacco use')
+Meta.Past30days.ecig <- subset(Meta, DV_Final=='Past-30-day e-cigarette use')
+Meta.Past30days.cig <- subset(Meta, DV_Final=='Past-30-day cigarette use')
+Meta.Past30days.Other <- subset(Meta, DV_Final=='Past-30-day other tobacco use')
+
+#Susceptibility to use
+Meta.SUS <- subset(Meta, DV_Final=='Susceptibility to use tobacco')
+
+```
+
+# Three-Level Meta-Analytic Models in metafor
+
+```{r Lifetime tobacco use}
+full.Lifetime <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime,
+                     random = ~ 1 | Study/es.id,
+                     test = "t", 
+                     method = "REML")
+
+summary(full.Lifetime)
+
+
+```
+```{r Exposure and past 30-day tobacco use}
+full.past30 <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days,
+                     random = ~ 1 | Study/es.id, 
+                     test = "t", 
+                     method = "REML")
+
+summary(full.past30)
+
+```
+```{r SUS}
+full.SUS <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.SUS,
+                     random = ~ 1 | Study/es.id, 
+                     test = "t", 
+                     method = "REML")
+
+summary(full.SUS)
+
+
+```
+
+## Variance Components for Three-Level Meta-Analysis
+
+```{r Variance Component Function}
+#Run Function for Variance Component
+mlm.variance.distribution = var.comp = function(x){
+
+  m = x
+
+  # Check class
+  if (!(class(m)[1] %in% c("rma.mv", "rma"))){
+    stop("x must be of class 'rma.mv'.")
+  }
+
+  # Check for three level model
+  if (m$sigma2s != 2){
+    stop("The model you provided does not seem to be a three-level model. This function can only be used for three-level models.")
+  }
+
+  # Check for right specification (nested model)
+  if (sum(grepl("/", as.character(m$random[[1]]))) < 1){
+    stop("Model must contain nested random effects. Did you use the '~ 1 | cluster/effect-within-cluster' notation in 'random'? See ?metafor::rma.mv for more details.")
+  }
+
+  # Get variance diagonal and calculate total variance
+  n = m$k.eff
+  vector.inv.var = 1/(diag(m$V))
+  sum.inv.var = sum(vector.inv.var)
+  sum.sq.inv.var = (sum.inv.var)^2
+  vector.inv.var.sq = 1/(diag(m$V)^2)
+  sum.inv.var.sq = sum(vector.inv.var.sq)
+  num = (n-1)*sum.inv.var
+  den = sum.sq.inv.var - sum.inv.var.sq
+  est.samp.var = num/den
+
+  # Calculate variance proportions
+  level1=((est.samp.var)/(m$sigma2[1]+m$sigma2[2]+est.samp.var)*100)
+  level2=((m$sigma2[2])/(m$sigma2[1]+m$sigma2[2]+est.samp.var)*100)
+  level3=((m$sigma2[1])/(m$sigma2[1]+m$sigma2[2]+est.samp.var)*100)
+
+  # Prepare df for return
+  Level=c("Level 1", "Level 2", "Level 3")
+  Variance=c(level1, level2, level3)
+  df.res=data.frame(Variance)
+  colnames(df.res) = c("% of total variance")
+  rownames(df.res) = Level
+  I2 = c("---", round(Variance[2:3], 2))
+  df.res = as.data.frame(cbind(df.res, I2))
+
+  totalI2 = Variance[2] + Variance[3]
+
+
+  # Generate plot
+  df1 = data.frame("Level" = c("Sampling Error", "Total Heterogeneity"),
+                  "Variance" = c(df.res[1,1], df.res[2,1]+df.res[3,1]),
+                  "Type" = rep(1,2))
+
+  df2 = data.frame("Level" = rownames(df.res),
+                   "Variance" = df.res[,1],
+                   "Type" = rep(2,3))
+
+  df = as.data.frame(rbind(df1, df2))
+
+
+  g = ggplot(df, aes(fill=Level, y=Variance, x=as.factor(Type))) +
+    coord_cartesian(ylim = c(0,1), clip = "off") +
+    geom_bar(stat="identity", position="fill", width = 1, color="black") +
+    scale_y_continuous(labels = scales::percent)+
+    theme(axis.title.x=element_blank(),
+          axis.text.y = element_text(color="black"),
+          axis.line.y = element_blank(),
+          axis.title.y=element_blank(),
+          axis.line.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.y = element_line(lineend = "round"),
+          legend.position = "none",
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(),
+          legend.background = element_rect(linetype="solid",
+                                           colour ="black"),
+          legend.title = element_blank(),
+          legend.key.size = unit(0.75,"cm"),
+          axis.ticks.length=unit(.25, "cm"),
+          plot.margin = unit(c(1,3,1,1), "lines")) +
+    scale_fill_manual(values = c("darkseagreen3", "deepskyblue3", "darkseagreen2",
+                                 "deepskyblue1", "deepskyblue2")) +
+
+    # Add Annotation
+
+    # Total Variance
+    annotate("text", x = 1.5, y = 1.05,
+             label = paste("Total Variance:",
+                           round(m$sigma2[1]+m$sigma2[2]+est.samp.var, 3))) +
+
+    # Sampling Error
+    annotate("text", x = 1, y = (df[1,2]/2+df[2,2])/100,
+             label = paste("Sampling Error Variance: \n", round(est.samp.var, 3)), size = 3) +
+
+    # Total I2
+    annotate("text", x = 1, y = ((df[2,2])/100)/2-0.02,
+             label = bquote("Total"~italic(I)^2*":"~.(round(df[2,2],2))*"%"), size = 3) +
+    annotate("text", x = 1, y = ((df[2,2])/100)/2+0.05,
+             label = paste("Variance not attributable \n to sampling error: \n", round(m$sigma2[1]+m$sigma2[2],3)), size = 3) +
+
+    # Level 1
+    annotate("text", x = 2, y = (df[1,2]/2+df[2,2])/100, label = paste("Level 1: \n",
+                                                                       round(df$Variance[3],2), "%", sep=""), size = 3) +
+
+    # Level 2
+    annotate("text", x = 2, y = (df[5,2]+(df[4,2]/2))/100,
+             label = bquote(italic(I)[Level2]^2*":"~.(round(df[4,2],2))*"%"), size = 3) +
+
+    # Level 3
+    annotate("text", x = 2, y = (df[5,2]/2)/100,
+             label = bquote(italic(I)[Level3]^2*":"~.(round(df[5,2],2))*"%"), size = 3)
+
+  returnlist = list(results = df.res,
+                    totalI2 = totalI2,
+                    plot = g)
+  class(returnlist) = c("mlm.variance.distribution", "list")
+
+  invisible(returnlist)
+
+  returnlist
+
+}
+
+# Calculate Variance Distribution
+mlm.variance.distribution(full.ever.ecig)
+res <-  var.comp(Any.model)
+```
+
+## Comparing Level 2 and Level 3 Models
+
+```{r Comparing level 2 and level 3}
+SUS.model.comp <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.SUS,
+                     random = ~ 1 | Study/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     sigma2 =  c(0, NA))
+
+summary(SUS.model.comp)
+
+anova(SUS.model.comp, full.SUS)
+```
+
+## Subgroup Analyses
+### Lifetime
+```{r Lifetime}
+#Lifetime and Tobacco Content
+Lifetime.Content <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime,
+                     random = ~ 1 | Study/es.id,
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ TobaccoContent)
+
+summary(Lifetime.Content)
+
+# Get exponentiated coefficients
+predict(Lifetime.Content, 
+        transf=exp, 
+        digits=2)
+
+#Lifetime and Behavior
+Lifetime.Behavior <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime,
+                     random = ~ 1 | Study/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Behavior)
+
+  
+summary(Lifetime.Behavior)
+
+#Lifetime and Timeframe
+Lifetime.Timeframe <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime,
+                     random = ~ 1 | Study/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Timeframe)
+
+summary(Lifetime.Timeframe)
+
+exp()
+
+#Lifetime and Platform
+Lifetime.Platform <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime,
+                     random = ~ 1 | Study/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Platform_Final)
+
+summary(Lifetime.Platform)
+
+#Lifetime and Quality
+Lifetime.Quality <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ QualityAssessment_Final)
+
+summary(Lifetime.Quality)
+
+
+```
+```{r Lifetime ecig}
+#Lifetime ecig and Tobacco Content
+Lifetime.Content.ecig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.ecig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ TobaccoContent)
+
+summary(Lifetime.Content.ecig)
+
+#Lifetime ecig and Behavior
+Lifetime.Behavior.ecig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.ecig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Behavior)
+
+summary(Lifetime.Behavior.ecig)
+
+#Lifetime ecig and Timeframe
+Lifetime.Timeframe.ecig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.ecig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Timeframe)
+
+summary(Lifetime.Timeframe.ecig)
+
+#Lifetime ecig and Platform
+Lifetime.Platform.ecig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.ecig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Platform_Final)
+
+summary(Lifetime.Platform.ecig)
+
+#Lifetime ecig and Quality
+Lifetime.Quality.ecig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.ecig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ QualityAssessment_Final)
+
+summary(Lifetime.Quality.ecig)
+
+
+```
+```{r Lifetime cig}
+#Lifetime cig and Tobacco Content
+Lifetime.Content.cig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.cig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ TobaccoContent)
+
+summary(Lifetime.Content.cig)
+
+#Lifetime and Behavior
+Lifetime.Behavior.cig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.cig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Behavior)
+
+summary(Lifetime.Behavior.cig)
+
+#Lifetime and Timeframe
+Lifetime.Timeframe.cig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.cig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Timeframe)
+
+summary(Lifetime.Timeframe.cig)
+
+#Lifetime and Platform
+Lifetime.Platform.cig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.cig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Platform_Final)
+
+summary(Lifetime.Platform.cig)
+
+#Lifetime and Quality
+Lifetime.Quality.cig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.cig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ QualityAssessment_Final)
+
+summary(Lifetime.Quality.cig)
+
+
+```
+```{r Lifetime other}
+#Lifetime other and Tobacco Content
+Lifetime.Content.other <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.other,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ TobaccoContent)
+
+summary(Lifetime.Content.other)
+
+#Lifetime and Behavior
+Lifetime.Behavior.other <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.other,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Behavior)
+
+summary(Lifetime.Behavior.other)
+
+#Lifetime and Timeframe
+Lifetime.Timeframe.other <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.other,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Timeframe)
+
+summary(Lifetime.Timeframe.other)
+
+#Lifetime and Platform
+Lifetime.Platform.other <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.other,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Platform_Final)
+
+summary(Lifetime.Platform.other)
+
+#Lifetime and Quality
+Lifetime.Quality.other <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Lifetime.other,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ QualityAssessment_Final)
+
+summary(Lifetime.Quality.other)
+
+
+```
+
+### Past 30 day
+```{r Past 30 day}
+#Past 30 day and Tobacco Content
+Past30days.Content <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ TobaccoContent)
+
+summary(Past30days.Content)
+
+#Past 30 day and Behavior
+Past30days.Behavior <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Behavior)
+
+summary(Past30days.Behavior)
+
+#Past 30 day and Timeframe
+Past30day.Timeframe <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Timeframe)
+
+summary(Past30day.Timeframe)
+
+#Past 30 day and Platform
+Past30day.Platform <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Platform_Final)
+
+summary(Past30day.Platform)
+
+#Past 30 day and Quality
+Past30day.Quality <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ QualityAssessment_Final)
+
+summary(Past30day.Quality)
+
+
+```
+```{r Past 30 day ecig}
+#Past 30 day and Tobacco Content
+Past30day.Content.ecig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.ecig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ TobaccoContent)
+
+summary(Past30day.Content.ecig)
+
+#Past 30 day and Behavior
+Past30day.Behavior.ecig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.ecig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Behavior)
+
+summary(Past30day.Behavior.ecig)
+
+#Past 30 day and Timeframe
+Past30day.Timeframe.ecig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.ecig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Timeframe)
+
+summary(Past30day.Timeframe.ecig)
+
+#Past 30 day and Platform
+Past30day.Platform.ecig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.ecig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Platform_Final)
+
+summary(Past30day.Platform.ecig)
+
+#Past 30 day and Quality
+Past30day.Quality.ecig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.ecig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ QualityAssessment_Final)
+
+summary(Past30day.Quality.ecig)
+
+
+```
+```{r Past 30 day cig}
+#Past 30 day and Tobacco Content
+Past30day.Content.cig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.cig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ TobaccoContent)
+
+summary(Past30day.Content.cig)
+
+#Past 30 day and Behavior
+Past30day.Behavior.cig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.cig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Behavior)
+
+summary(Past30day.Behavior.cig)
+
+#Past 30 day and Timeframe
+Past30day.Timeframe.cig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.cig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Timeframe)
+
+summary(Past30day.Timeframe.cig)
+
+#Past 30 day and Platform
+Past30day.Platform.cig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.cig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Platform_Final)
+
+summary(Past30day.Platform.cig)
+
+#Past 30 day and Quality
+Past30day.Quality.cig <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.cig,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ QualityAssessment_Final)
+
+summary(Past30day.Quality.cig)
+
+
+```
+```{r Past 30 day other}
+#Past 30 day and Tobacco Content
+Past30day.Content.other <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.Other,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ TobaccoContent)
+
+summary(Past30day.Content.other)
+
+#Past 30 day and Behavior
+Past30day.Behavior.other <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.Other,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Behavior)
+
+summary(Past30day.Behavior.other)
+
+#Past 30 day and Timeframe
+Past30day.Timeframe.other <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.Other,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Timeframe)
+
+summary(Past30day.Timeframe.other)
+
+#Past 30 day and Platform
+Past30day.Platform.other <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.Other,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Platform_Final)
+
+summary(Past30day.Platform.other)
+
+#Past 30 day and Quality
+Past30day.Quality.other <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.Past30days.Other,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ QualityAssessment_Final)
+
+summary(Past30day.Quality.other)
+
+
+```
+
+### Suscepbility
+```{r sus mods}
+#Current and Tobacco Content
+Content.sus <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.SUS,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ TobaccoContent)
+
+summary(Content.sus)
+
+#Current and Behavior
+Behavior.sus <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.SUS,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Behavior)
+
+summary(Behavior.sus)
+
+#Current and Timeframe
+Timeframe.sus <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.SUS,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Timeframe)
+
+summary(Timeframe.sus)
+
+#Current and Platform
+Platform.sus <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.SUS,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ Platform_Final)
+
+summary(Platform.sus)
+
+#Current and Quality
+Quality.sus <- rma.mv(yi = OR, 
+                     V = Variance, 
+                     slab = Author,
+                     data = Meta.SUS,
+                     random = ~ 1 | Author/es.id, 
+                     test = "t", 
+                     method = "REML",
+                     mods = ~ QualityAssessment_Final)
+
+summary(Quality.sus)
+
+
+```
+
+
+# Random Effects Models and Forest Plots in meta 
+
+```{r Lifetime use and forest plot}
+# Lifetime use
+Lifetime.Use <- metagen(TE = OR,
+            seTE = seTE,
+            lower = OR.L.CI,
+            upper = OR.U.CI,
+            studlab = Author,
+            id = Study,
+            data = Meta.Lifetime,
+            sm = "OR",
+            method.tau = "REML",
+            fixed = FALSE,
+            random = TRUE)
+
+summary(Lifetime.Use)
+
+#Forest Plot (850x1150 for the export)
+Lifetime.Use <- update.meta(Lifetime.Use, 
+            subgroup = DV_Final, 
+            tau.common = FALSE)
+
+forest.meta(Lifetime.Use,
+            sortvar = OR,
+            overall = TRUE,
+            random = TRUE,
+            fixed = FALSE,
+            test.subgroup = FALSE,
+            print.subgroup.name = FALSE,
+            col.diamond.random = "Black",
+            col.by = "Black",
+            JAMA.pval = TRUE,
+            leftcols = "studlab",
+            calcwidth.hetstat = TRUE)
+
+
+
+```
+```{r Lifetime ecig use}
+# Lifetime use
+Lifetime.ecig.use <- metagen(TE = OR,
+            seTE = seTE,
+            lower = OR.L.CI,
+            upper = OR.U.CI,
+            studlab = Author,
+            id = Study,
+            data = Meta.Lifetime.ecig,
+            sm = "OR",
+            method.tau = "REML",
+            fixed = FALSE,
+            random = TRUE)
+
+
+summary(Lifetime.ecig.use)
+```
+```{r Lifetime cig use}
+# Lifetime use
+Lifetime.cig.use <- metagen(TE = OR,
+            seTE = seTE,
+            lower = OR.L.CI,
+            upper = OR.U.CI,
+            studlab = Author,
+            id = Study,
+            data = Meta.Lifetime.cig,
+            sm = "OR",
+            method.tau = "REML",
+            fixed = FALSE,
+            random = TRUE)
+
+
+summary(Lifetime.cig.use)
+```
+```{r Lifetime other use}
+# Lifetime use
+Lifetime.other.use <- metagen(TE = OR,
+            seTE = seTE,
+            lower = OR.L.CI,
+            upper = OR.U.CI,
+            studlab = Author,
+            id = Study,
+            data = Meta.Lifetime.other,
+            sm = "OR",
+            method.tau = "REML",
+            fixed = FALSE,
+            random = TRUE)
+
+
+summary(Lifetime.other.use)
+```
+```{r Past30days use and forest plot}
+# Past 30 days
+past30days.Use <- metagen(TE = OR,
+            seTE = seTE,
+            lower = OR.L.CI,
+            upper = OR.U.CI,
+            studlab = Author,
+            id = Study,
+            data = Meta.Past30days,
+            sm = "OR",
+            method.tau = "REML",
+            fixed = FALSE,
+            random = TRUE,
+            )
+
+summary(past30days.Use)
+
+#Forest Plot
+past30days.Use <- update.meta(past30days.Use, 
+            subgroup = DV_Final, 
+            tau.common = FALSE)
+
+forest.meta(past30days.Use,
+            sortvar = OR,
+            overall = TRUE,
+            random = TRUE,
+            fixed = FALSE,
+            test.subgroup = FALSE,
+            print.subgroup.name = FALSE,
+            col.diamond.random = "Black",
+            col.by = "black",
+            JAMA.pval = TRUE,
+            leftcols = "studlab",
+            calcwidth.hetstat = TRUE)
+
+```
+```{r Past30days e-cigarette use}
+# Past 30 days
+past30days.ecig.use <- metagen(TE = OR,
+            seTE = seTE,
+            lower = OR.L.CI,
+            upper = OR.U.CI,
+            studlab = Author,
+            id = Study,
+            data = Meta.Past30days.ecig,
+            sm = "OR",
+            method.tau = "REML",
+            fixed = FALSE,
+            random = TRUE,
+            )
+
+summary(past30days.ecig.use)
+```
+```{r Past30days cigarette use}
+# Past 30 days
+past30days.cig.use <- metagen(TE = OR,
+            seTE = seTE,
+            lower = OR.L.CI,
+            upper = OR.U.CI,
+            studlab = Author,
+            id = Study,
+            data = Meta.Past30days.cig,
+            sm = "OR",
+            method.tau = "REML",
+            fixed = FALSE,
+            random = TRUE,
+            )
+
+summary(past30days.cig.use)
+```
+```{r Past30days other use}
+# Past 30 days
+past30days.other.use <- metagen(TE = OR,
+            seTE = seTE,
+            lower = OR.L.CI,
+            upper = OR.U.CI,
+            studlab = Author,
+            id = Study,
+            data = Meta.Past30days.Other,
+            sm = "OR",
+            method.tau = "REML",
+            fixed = FALSE,
+            random = TRUE,
+            )
+
+summary(past30days.other.use)
+```
+```{r Sus and forest plot}
+# Ever use
+SUS <- metagen(TE = OR,
+            seTE = seTE,
+            lower = OR.L.CI,
+            upper = OR.U.CI,
+            studlab = Author,
+            id = Study,
+            data = Meta.SUS,
+            sm = "OR",
+            method.tau = "REML",
+            fixed = FALSE,
+            random = TRUE,
+            )
+
+summary(SUS)
+
+#Forest Plot
+forest.meta(SUS,
+            sortvar = OR,
+            overall = TRUE,
+            random = TRUE,
+            fixed = FALSE,
+            print.subgroup.name = FALSE,
+            col.diamond.random = "Black",
+            col.by = "Black",
+            leftcols = "studlab",
+            calcwidth.hetstat = TRUE)
+
+
+
+```
+```{r Design Quality}
+DesignQuality <- metagen(TE = OR,
+            seTE = seTE,
+            lower = OR.L.CI,
+            upper = OR.U.CI,
+            studlab = Author,
+            id = Study,
+            data = Meta,
+            sm = "OR",
+            method.tau = "REML",
+            fixed = FALSE,
+            random = TRUE,
+            )
+
+
+```
+```{r Sample Breadth}
+SampleBreadth <- metagen(TE = OR,
+            seTE = seTE,
+            lower = OR.L.CI,
+            upper = OR.U.CI,
+            studlab = Author,
+            id = Study,
+            data = Meta,
+            sm = "OR",
+            method.tau = "REML",
+            fixed = FALSE,
+            random = TRUE,
+            )
+```
+
+
+
+# Subgroup Analyses
+```{r Lifetime use moderators}
+#Tobacco Content
+## Switch Study to NULL to get difference test
+Lifetime.Use.TC <- update.meta(Lifetime.Use, 
+            subgroup = TobaccoContent,
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.Use.TC)
+
+#Behavior
+Lifetime.Use.Behavior <- update.meta(Lifetime.Use, 
+            subgroup = Behavior, 
+            tau.common = FALSE,
+            id = Study)
+
+summary(Lifetime.Use.Behavior)
+
+#Timeframe
+Lifetime.Use.Timeframe <- update.meta(Lifetime.Use, 
+            subgroup = Timeframe, 
+            tau.common = FALSE,
+            id = Study)
+
+summary(Lifetime.Use.Timeframe)
+
+#Platform
+Lifetime.Use.Platform <- update.meta(Lifetime.Use, 
+            subgroup = Platform_Final, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.Use.Platform)
+
+#Age
+Lifetime.Use.Age <- update.meta(Lifetime.Use, 
+            subgroup = Age, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.Use.Age)
+```
+```{r Lifetime ecig use moderators}
+#Tobacco Content
+## Switch Study to NULL to get difference test
+Lifetime.ecig.use.TC <- update.meta(Lifetime.ecig.use, 
+            subgroup = TobaccoContent,
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.ecig.use.TC)
+
+#Behavior
+Lifetime.ecig.use.Behavior <- update.meta(Lifetime.ecig.use, 
+            subgroup = Behavior, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.ecig.use.Behavior)
+
+#Timeframe
+Lifetime.ecig.use.Timeframe <- update.meta(Lifetime.ecig.use, 
+            subgroup = Timeframe, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.ecig.use.Timeframe)
+
+#Platform
+Lifetime.ecig.use.Platform <- update.meta(Lifetime.ecig.use, 
+            subgroup = Platform_Final, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.ecig.use.Platform)
+
+#Age
+Lifetime.ecig.Use.Age <- update.meta(Lifetime.ecig.use, 
+            subgroup = Age, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.ecig.Use.Age)
+
+```
+```{r Lifetime cig use moderators}
+#Tobacco Content
+## Switch Study to NULL to get difference test
+Lifetime.cig.use.TC <- update.meta(Lifetime.cig.use, 
+            subgroup = TobaccoContent,
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.cig.use.TC)
+
+#Behavior
+Lifetime.cig.use.Behavior <- update.meta(Lifetime.cig.use, 
+            subgroup = Behavior, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.cig.use.Behavior)
+
+#Timeframe
+Lifetime.cig.use.Timeframe <- update.meta(Lifetime.cig.use, 
+            subgroup = Timeframe, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.cig.use.Timeframe)
+
+#Platform
+Lifetime.cig.use.Platform <- update.meta(Lifetime.cig.use, 
+            subgroup = Platform_Final, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.cig.use.Platform)
+
+#Age
+Lifetime.cig.use.Age <- update.meta(Lifetime.cig.use, 
+            subgroup = Age, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.cig.use.Age)
+
+```
+```{r Lifetime other use moderators}
+#Tobacco Content
+## Switch Study to NULL to get difference test
+Lifetime.other.use.TC <- update.meta(Lifetime.other.use, 
+            subgroup = TobaccoContent,
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.other.use.TC)
+
+#Behavior
+Lifetime.other.use.Behavior <- update.meta(Lifetime.other.use, 
+            subgroup = Behavior, 
+            tau.common = FALSE,
+            id = Study)
+
+summary(Lifetime.other.use.Behavior)
+
+#Timeframe
+Lifetime.other.use.Timeframe <- update.meta(Lifetime.other.use, 
+            subgroup = Timeframe, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.other.use.Timeframe)
+        
+#Platform
+Lifetime.other.use.Platform <- update.meta(Lifetime.other.use, 
+            subgroup = Platform_Final, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.other.use.Platform)
+
+#Age
+Lifetime.other.use.Age <- update.meta(Lifetime.other.use, 
+            subgroup = Age, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Lifetime.other.use.Age)
+
+```
+```{r Past 30 day use moderators}
+#Tobacco Content
+## Switch Study to NULL to get difference test
+Past30days.Use.TC <- update.meta(past30days.Use, 
+            subgroup = TobaccoContent,
+            tau.common = FALSE,
+            id = Study)
+
+summary(Past30days.Use.TC)
+
+#Behavior
+Past30days.Use.Behavior <- update.meta(past30days.Use, 
+            subgroup = Behavior, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.Use.Behavior)
+
+#Timeframe
+Past30days.Use.Timeframe <- update.meta(past30days.Use, 
+            subgroup = Timeframe, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.Use.Timeframe)
+
+#Platform
+Past30days.Use.Platform <- update.meta(past30days.Use, 
+            subgroup = Platform_Final, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.Use.Platform)
+
+#Age
+Past30days.Use.Age <- update.meta(past30days.Use, 
+            subgroup = Age, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.Use.Age)
+
+```
+```{r Past 30 day ecig use moderators}
+#Tobacco Content
+## Switch Study to NULL to get difference test
+Past30days.ecig.use.TC <- update.meta(past30days.ecig.use, 
+            subgroup = TobaccoContent,
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.ecig.use.TC)
+
+#Behavior
+Past30days.ecig.use.Behavior <- update.meta(past30days.ecig.use, 
+            subgroup = Behavior, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.ecig.use.Behavior)
+
+#Timeframe
+Past30days.ecig.use.Timeframe <- update.meta(past30days.ecig.use, 
+            subgroup = Timeframe, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.ecig.use.Timeframe)
+
+#Platform
+Past30days.ecig.use.Platform <- update.meta(past30days.ecig.use, 
+            subgroup = Platform_Final, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.ecig.use.Platform)
+
+#Age
+Past30days.ecig.use.Age <- update.meta(past30days.ecig.use, 
+            subgroup = Age, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.ecig.use.Age)
+
+```
+```{r Past 30 day cig use moderators}
+#Tobacco Content
+## Switch Study to NULL to get difference test
+Past30days.cig.use.TC <- update.meta(past30days.cig.use, 
+            subgroup = TobaccoContent,
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.cig.use.TC)
+
+#Behavior
+Past30days.cig.use.Behavior <- update.meta(past30days.cig.use, 
+            subgroup = Behavior, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.cig.use.Behavior)
+
+#Timeframe
+Past30days.cig.use.Timeframe <- update.meta(past30days.cig.use, 
+            subgroup = Timeframe, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.cig.use.Timeframe)
+
+#Platform
+Past30days.cig.use.Platform <- update.meta(past30days.cig.use, 
+            subgroup = Platform_Final, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.cig.use.Platform)
+
+#Age
+Past30days.cig.use.Age <- update.meta(past30days.cig.use, 
+            subgroup = Age, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.cig.use.Age)
+
+```
+```{r Past 30 day other use moderators}
+#Tobacco Content
+## Switch Study to NULL to get difference test
+Past30days.other.use.TC <- update.meta(past30days.other.use, 
+            subgroup = TobaccoContent,
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.other.use.TC)
+
+#Behavior
+Past30days.other.use.Behavior <- update.meta(past30days.other.use, 
+            subgroup = Behavior, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.other.use.Behavior)
+
+#Timeframe
+Past30days.other.use.Timeframe <- update.meta(past30days.other.use, 
+            subgroup = Timeframe, 
+            tau.common = FALSE,
+            id = Study)
+
+summary(Past30days.other.use.Timeframe)
+
+#Platform
+Past30days.other.use.Platform <- update.meta(past30days.other.use, 
+            subgroup = Platform_Final, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.other.use.Platform)
+
+#Age
+Past30days.other.use.Age <- update.meta(past30days.other.use, 
+            subgroup = Age, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Past30days.other.use.Age)
+
+```
+```{r SUS moderators}
+#Tobacco Content
+## Switch Study to NULL to get difference test
+SUS.TC <- update.meta(SUS, 
+            subgroup = TobaccoContent,
+            tau.common = FALSE,
+            id = NULL)
+
+summary(SUS.TC)
+
+#Behavior
+SUS.Behavior <- update.meta(SUS, 
+            subgroup = Behavior, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(SUS.Behavior)
+
+#Timeframe
+SUS.Timeframe <- update.meta(SUS, 
+            subgroup = Timeframe, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(SUS.Timeframe)
+
+#Platform
+SUS.Platform <- update.meta(SUS, 
+            subgroup = Platform_Final, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(SUS.Platform)
+
+#Age
+SUS.Age <- update.meta(SUS, 
+            subgroup = Age, 
+            tau.common = FALSE,
+            id = NULL)
+
+summary(SUS.Age)
+
+```
+```{r Product Type}
+#Lifetime
+Producttype <- update.meta(Lifetime.Use, 
+            subgroup = DV_Final,
+            tau.common = FALSE,
+            id = NULL)
+
+summary(Producttype)
+```
+```{r Design Quality}
+DesignQUAL <- update.meta(DesignQuality, 
+            subgroup = Design_Quality,
+            tau.common = FALSE,
+            id = NULL)
+
+summary(DesignQUAL)
+
+```
+```{r Sample Breadth}
+Sample_Bre <- update.meta(SampleBreadth, 
+            subgroup = Sampling_Breadth,
+            tau.common = FALSE,
+            id = Study)
+
+summary(Sample_Bre)
+```
+
+
+
+# Publication Bias
+```{r Eggers Function}
+eggers.test = function(x) {
+
+    # Validate
+    x = x
+
+    if (x$k < 10) {
+
+        warning(paste("Your meta-analysis contains k =",
+                      x$k, "studies. Egger's test may lack the statistical power to detect bias when the number of studies is small (i.e., k<10)."))
+
+    }
+
+    if (class(x)[1] %in% c("meta", "metabin", "metagen", "metacont", "metacor", "metainc", "metaprop")) {
+
+        # Conduct metabias
+        eggers = meta::metabias(x, k.min = 3, method = "linreg")
+
+        # Get Intercept
+        intercept = as.numeric(eggers$estimate[1])
+
+        # Get SE
+        se = as.numeric(eggers$estimate[2])
+
+        # Calculate 95CI
+        llci = intercept - qnorm(0.975) * se
+        ulci = intercept + qnorm(0.975) * se
+
+        # Get t
+        t = as.numeric(eggers$statistic)
+
+        # Get df
+        df = as.numeric(eggers$parameters)
+
+        # Get p
+        p = as.numeric(eggers$p.value)
+
+        # Make df
+        returnlist = list(intercept = intercept,
+                          llci = llci,
+                          ulci = ulci,
+                          t = t,
+                          p = p,
+                          meta.obj = x)
+
+    } else {
+
+        stop("x must be of type 'metabin', 'metagen', 'metacont', 'metainc' or 'metaprop'")
+
+    }
+
+    class(returnlist) = "eggers.test"
+
+    return(returnlist)
+
+}
+```
+```{r Publication Bias}
+# All effect sizes
+PubBias <- metagen(TE = OR,
+            seTE = seTE,
+            lower = OR.L.CI,
+            upper = OR.U.CI,
+            studlab = Author,
+            data = Meta,
+            sm = "OR",
+            method.tau = "REML",
+            fixed = FALSE,
+            random = TRUE,
+            )
+
+#SMALL STUDY EFFECT SIZE
+#Eggers Regression Intercept
+metabias(PubBias, method.bias = "linreg")
+eggers.test(PubBias)
+#Rücker’s Limit Meta-Analysis Method
+library(metasens)
+# Run limit meta-analysis
+limitmeta(PubBias)
+
+# PCurve Analysis
+pcurve(PubBias)
+
+
+#Fail Safe N
+fsn(yi = OR,        
+    sei  = Standard_error,
+    data = Meta, 
+    type="Rosenthal", 
+    alpha=.05)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
